@@ -44,15 +44,12 @@ public class IconUtils {
         if (n.contains("wrap") || n.contains("tortilla")) return "🌯";
         
         // Condiments & Spices
-        // Mayonnaise / Ketchup / Mustard / Dressing - Squeeze Bottle 🧴
         if (n.contains("mayonnaise") || n.contains("mayo") || n.contains("ketchup") || n.contains("mustard") || n.contains("dressing")) return "🧴"; 
-        // Oil / Vinegar / Soy Sauce - Glass Bottle 🍶
         if (n.contains("oil") || n.contains("vinegar") || n.contains("sauce") || n.contains("soy")) return "🍶";
         
         if (n.contains("salt") || n.contains("spice") || n.contains("sugar") || n.contains("cinnamon") || n.contains("powder") || n.contains("pepper") && n.contains("ground")) return "🧂";
         if (n.contains("honey") || n.contains("syrup") || n.contains("jam") || n.contains("spread")) return "🍯";
         
-        // Canned food / Paste / Puree - Can 🥫
         if (n.contains("can") || n.contains("tin") || n.contains("paste") || n.contains("puree")) return "🥫";
         
         return "📦";
@@ -91,7 +88,7 @@ public class IconUtils {
     }
 
     public static String getFullUnitName(double qty, String unit) {
-        if (unit == null) return "";
+        if (unit == null || unit.isEmpty()) return "";
         String u = unit.toLowerCase().trim();
         boolean plural = qty != 1.0;
         
@@ -105,12 +102,16 @@ public class IconUtils {
             case "kilograms":
                 return plural ? "kilograms" : "kilogram";
             case "ml":
-            case "milliliter":
             case "milliliters":
+            case "millilitre":
+            case "milliliter":
+            case "millilitres":
                 return plural ? "milliliters" : "milliliter";
             case "l":
             case "liter":
             case "liters":
+            case "litre":
+            case "litres":
                 return plural ? "liters" : "liter";
             case "pcs":
             case "pc":
@@ -120,6 +121,7 @@ public class IconUtils {
             case "tbsp":
             case "tablespoon":
             case "tablespoons":
+            case "tbs":
                 return plural ? "tablespoons" : "tablespoon";
             case "tsp":
             case "teaspoon":
@@ -152,7 +154,11 @@ public class IconUtils {
             case "lb":
             case "pound":
             case "pounds":
+            case "lbs":
                 return plural ? "pounds" : "pound";
+            case "clove":
+            case "cloves":
+                return plural ? "cloves" : "clove";
             default: return unit;
         }
     }

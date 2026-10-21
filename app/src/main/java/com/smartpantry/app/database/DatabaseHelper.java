@@ -17,7 +17,7 @@ import java.util.List;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "smart_pantry.db";
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 6; // Force fresh seed with simple test recipe
 
     // Pantry table
     public static final String TABLE_PANTRY = "pantry";
@@ -86,10 +86,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // PANTRY CRUD
-    // ─────────────────────────────────────────────────────────────────────────
-
     public long addPantryItem(PantryItem item) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -98,8 +94,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COL_UNIT, item.getUnit());
         values.put(COL_EXPIRY_DATE, item.getExpiryDate() != null ? item.getExpiryDate() : "");
         return db.insert(TABLE_PANTRY, null, values);
-        // Note: Closing DB is avoided inside loops, or we rely on the helper's lifecycle.
-        // For simple apps, calling getWritableDatabase() multiple times is fine.
     }
 
     public List<PantryItem> getAllPantryItems() {
@@ -155,10 +149,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.delete(TABLE_PANTRY, COL_PANTRY_ID + " = ?", new String[]{String.valueOf(id)});
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // RECIPE READS
-    // ─────────────────────────────────────────────────────────────────────────
-
     public List<Recipe> getAllRecipes() {
         List<Recipe> recipes = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -176,24 +166,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         cursor.close();
         return recipes;
-    }
-
-    public Recipe getRecipeById(int id) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery(
-                "SELECT * FROM " + TABLE_RECIPES + " WHERE " + COL_RECIPE_ID + " = ?",
-                new String[]{String.valueOf(id)});
-        Recipe recipe = null;
-        if (cursor.moveToFirst()) {
-            recipe = new Recipe();
-            recipe.setId(cursor.getInt(cursor.getColumnIndexOrThrow(COL_RECIPE_ID)));
-            recipe.setName(cursor.getString(cursor.getColumnIndexOrThrow(COL_RECIPE_NAME)));
-            recipe.setInstructions(cursor.getString(cursor.getColumnIndexOrThrow(COL_INSTRUCTIONS)));
-            recipe.setIconEmoji(cursor.getString(cursor.getColumnIndexOrThrow(COL_RECIPE_ICON)));
-            recipe.setIngredients(getRecipeIngredients(recipe.getId()));
-        }
-        cursor.close();
-        return recipe;
     }
 
     public List<RecipeIngredient> getRecipeIngredients(int recipeId) {
@@ -217,9 +189,23 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return list;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // STRICT RECIPE MATCHING
-    // ─────────────────────────────────────────────────────────────────────────
+    public Recipe getRecipeById(int id) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(
+                "SELECT * FROM " + TABLE_RECIPES + " WHERE " + COL_RECIPE_ID + " = ?",
+                new String[]{String.valueOf(id)});
+        Recipe recipe = null;
+        if (cursor.moveToFirst()) {
+            recipe = new Recipe();
+            recipe.setId(cursor.getInt(cursor.getColumnIndexOrThrow(COL_RECIPE_ID)));
+            recipe.setName(cursor.getString(cursor.getColumnIndexOrThrow(COL_RECIPE_NAME)));
+            recipe.setInstructions(cursor.getString(cursor.getColumnIndexOrThrow(COL_INSTRUCTIONS)));
+            recipe.setIconEmoji(cursor.getString(cursor.getColumnIndexOrThrow(COL_RECIPE_ICON)));
+            recipe.setIngredients(getRecipeIngredients(recipe.getId()));
+        }
+        cursor.close();
+        return recipe;
+    }
 
     public List<Recipe> getSuggestedRecipes() {
         List<PantryItem> pantry = getAllPantryItems();
@@ -241,15 +227,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         for (RecipeIngredient needed : required) {
             boolean found = false;
             for (PantryItem available : pantry) {
-                // 1. Check if name matches (normalized)
                 if (IngredientNormalizer.matches(needed.getIngredientName(), available.getIngredientName())) {
-                    // 2. Check if units match (normalized)
-                    if (IngredientNormalizer.unitsMatch(needed.getUnit(), available.getUnit())) {
-                        // 3. Check quantity
-                        if (available.getQuantity() >= needed.getRequiredQuantity()) {
-                            found = true;
-                            break;
-                        }
+                    if (IngredientNormalizer.isEnough(needed.getRequiredQuantity(), needed.getUnit(), 
+                                                     available.getQuantity(), available.getUnit())) {
+                        found = true;
+                        break;
                     }
                 }
             }
@@ -258,40 +240,38 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return true;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // SEED 20 RECIPES
-    // ─────────────────────────────────────────────────────────────────────────
-
     private void seedRecipes(SQLiteDatabase db) {
         String[][] recipes = {
-            {"Chicken Fried Rice", "1. Cook rice until fluffy.\n2. Dice chicken and fry in oil for 8 minutes.\n3. Push chicken to one side, scramble 2 eggs on the other side.\n4. Add rice, soy sauce, and spring onions.\n5. Stir-fry everything together for 3 minutes. Serve hot.", "🍚"},
-            {"Tomato Pasta", "1. Boil pasta in salted water until al dente.\n2. Fry garlic in olive oil for 1 minute.\n3. Add diced tomatoes and season with salt and pepper.\n4. Simmer sauce for 10 minutes.\n5. Toss pasta with sauce. Serve with cheese if desired.", "🍝"},
-            {"Vegetable Omelette", "1. Beat eggs with a pinch of salt.\n2. Dice onion, tomato, and green pepper.\n3. Fry vegetables in butter for 3 minutes.\n4. Pour eggs over vegetables and cook on low heat.\n5. Fold omelette in half and slide onto a plate.", "🍳"},
-            {"Chicken Curry", "1. Fry onion until golden.\n2. Add garlic and curry powder, fry 1 minute.\n3. Add diced chicken and brown all sides.\n4. Add tomatoes and simmer 20 minutes.\n5. Stir in cream, adjust seasoning. Serve with rice.", "🍛"},
-            {"Tuna Sandwich", "1. Drain tuna and mix with mayonnaise.\n2. Add diced onion and season with salt and pepper.\n3. Toast bread slices lightly.\n4. Spread tuna mixture on one slice.\n5. Top with lettuce, close sandwich, and serve.", "🥪"},
-            {"Beef Stir Fry", "1. Slice beef thinly against the grain.\n2. Heat oil in wok until smoking.\n3. Stir-fry beef for 3 minutes, remove from wok.\n4. Fry mixed vegetables for 2 minutes.\n5. Return beef, add soy sauce and oyster sauce, toss and serve.", "🥢"},
-            {"Potato Omelette", "1. Slice potatoes thinly and fry in oil until tender.\n2. Beat eggs with salt and pepper.\n3. Add cooked potatoes to eggs and mix gently.\n4. Cook mixture in a pan on low heat until set.\n5. Flip carefully and cook the other side. Slice to serve.", "🥘"},
-            {"Tomato Rice", "1. Fry onion and garlic until soft.\n2. Add diced tomatoes and cook 5 minutes.\n3. Add rice and stir to coat.\n4. Pour in water or stock, bring to boil.\n5. Cover and simmer 18 minutes until rice is cooked.", "🥣"},
-            {"Chicken Pasta", "1. Boil pasta until al dente.\n2. Fry chicken strips in oil until cooked through.\n3. Add garlic and fry 1 minute.\n4. Stir in cream and season well.\n5. Toss pasta in sauce and top with cheese.", "🍜"},
-            {"Vegetable Rice", "1. Wash and dice all vegetables.\n2. Fry onion until soft.\n3. Add remaining vegetables and stir-fry 5 minutes.\n4. Add rice and water, bring to boil.\n5. Cover and cook on low until rice is fluffy.", "🥗"},
-            {"Beef Pasta", "1. Brown minced beef in a pan.\n2. Add onion and garlic, cook until soft.\n3. Stir in tomatoes and season well.\n4. Simmer sauce for 15 minutes.\n5. Cook pasta, drain, and serve with beef sauce on top.", "🍝"},
-            {"Egg Sandwich", "1. Hard-boil eggs for 10 minutes, then cool and peel.\n2. Mash eggs with mayonnaise and mustard.\n3. Season with salt, pepper, and a pinch of paprika.\n4. Toast bread until golden.\n5. Spread egg mixture on toast and serve.", "🥪"},
-            {"Potato Curry", "1. Peel and cube potatoes.\n2. Fry onion until golden, add curry powder.\n3. Add potatoes and coat in spice mix.\n4. Pour in water or stock and bring to boil.\n5. Simmer 20 minutes until potatoes are soft. Serve with rice or bread.", "🍛"},
-            {"Chicken Wrap", "1. Season chicken strips with spices and fry until cooked.\n2. Warm tortilla wraps in a dry pan.\n3. Spread mayonnaise on wrap.\n4. Add chicken, lettuce, and diced tomato.\n5. Roll wrap tightly and slice diagonally to serve.", "🌯"},
-            {"Tuna Pasta", "1. Cook pasta in salted boiling water.\n2. Drain tuna and flake into a bowl.\n3. Mix tuna with mayonnaise, lemon juice, and seasoning.\n4. Drain pasta, allow to cool slightly.\n5. Toss pasta with tuna mixture and serve.", "🍝"},
-            {"Vegetable Soup", "1. Chop all vegetables into small chunks.\n2. Fry onion and garlic in oil.\n3. Add remaining vegetables and stir.\n4. Pour in vegetable stock, bring to boil.\n5. Simmer 25 minutes until vegetables are tender. Season and serve.", "🍲"},
-            {"Beef Rice", "1. Fry diced beef until browned.\n2. Add onion and garlic, fry until soft.\n3. Stir in tomatoes and season well.\n4. Add rice and stock, bring to boil.\n5. Cover and simmer until rice absorbs all liquid. Fluff and serve.", "🥣"},
-            {"Chicken Soup", "1. Place chicken pieces in a pot with water.\n2. Bring to boil and skim foam from surface.\n3. Add diced vegetables and seasoning.\n4. Simmer for 40 minutes until chicken is tender.\n5. Remove chicken, shred meat, return to pot. Serve hot.", "🍲"},
-            {"Tomato Omelette", "1. Beat eggs with salt and pepper.\n2. Dice tomatoes and fry briefly in butter.\n3. Pour eggs over tomatoes in the pan.\n4. Cook on medium-low heat until edges set.\n5. Fold omelette, cook 1 more minute, and serve.", "🍳"},
-            {"Potato and Egg Hash", "1. Dice potatoes and fry in oil until golden and crispy.\n2. Add diced onion and cook until soft.\n3. Season with salt, pepper, and paprika.\n4. Create wells in the potato mixture and crack in eggs.\n5. Cover pan and cook until eggs are set. Serve immediately.", "🥘"}
+            {"Butter Toast", "1. Toast the bread until golden brown.\n2. Spread butter evenly on the toast.\n3. Serve warm.", "🍞"},
+            {"Chicken Fried Rice", "1. Cook rice.\n2. Fry chicken.\n3. Add eggs and veggies.\n4. Stir in soy sauce.", "🍚"},
+            {"Tomato Pasta", "1. Boil pasta.\n2. Sauté garlic and tomatoes.\n3. Mix and serve.", "🍝"},
+            {"Vegetable Omelette", "1. Whisk eggs.\n2. Sauté veggies.\n3. Pour eggs and fold.", "🍳"},
+            {"Chicken Curry", "1. Brown chicken.\n2. Add spices and tomatoes.\n3. Simmer until tender.", "🍛"},
+            {"Tuna Sandwich", "1. Mix tuna and mayo.\n2. Spread on bread.", "🥪"},
+            {"Beef Stir Fry", "1. Sear beef.\n2. Add veggies and sauce.\n3. Stir fry.", "🥢"},
+            {"Potato Omelette", "1. Fry potatoes.\n2. Add eggs and cook.", "🥘"},
+            {"Tomato Rice", "1. Sauté onions.\n2. Cook rice with tomatoes.", "🥣"},
+            {"Chicken Pasta", "1. Cook pasta.\n2. Fry chicken.\n3. Mix with cream.", "🍜"},
+            {"Vegetable Rice", "1. Sauté veggies.\n2. Add rice and cook.", "🥗"},
+            {"Beef Pasta", "1. Brown beef.\n2. Add sauce and pasta.", "🍝"},
+            {"Egg Sandwich", "1. Mash eggs with mayo.\n2. Spread on bread.", "🥪"},
+            {"Potato Curry", "1. Sauté onions.\n2. Add potatoes and simmer.", "🍛"},
+            {"Chicken Wrap", "1. Grill chicken.\n2. Wrap with veggies.", "🌯"},
+            {"Tuna Pasta", "1. Cook pasta.\n2. Mix with tuna and mayo.", "🍝"},
+            {"Vegetable Soup", "1. Simmer veggies in stock.", "🍲"},
+            {"Beef Rice", "1. Fry beef.\n2. Mix with rice.", "🥣"},
+            {"Chicken Soup", "1. Simmer chicken and veggies.", "🍲"},
+            {"Tomato Omelette", "1. Sauté tomatoes.\n2. Add eggs.", "🍳"},
+            {"Potato and Egg Hash", "1. Fry potatoes.\n2. Crack eggs over top.", "🥘"}
         };
 
         Object[][][] recipeIngredients = {
+            { {"Butter Toast"}, {"bread", 2.0, "slices"}, {"butter", 1.0, "tablespoons"} },
             { {"Chicken Fried Rice"}, {"chicken", 300.0, "grams"}, {"rice", 2.0, "cups"}, {"egg", 2.0, "pieces"}, {"soy sauce", 2.0, "tablespoons"}, {"onion", 1.0, "pieces"} },
             { {"Tomato Pasta"}, {"pasta", 200.0, "grams"}, {"tomato", 3.0, "pieces"}, {"garlic", 2.0, "pieces"}, {"olive oil", 2.0, "tablespoons"} },
             { {"Vegetable Omelette"}, {"egg", 3.0, "pieces"}, {"onion", 1.0, "pieces"}, {"tomato", 1.0, "pieces"}, {"green pepper", 1.0, "pieces"}, {"butter", 1.0, "tablespoons"} },
             { {"Chicken Curry"}, {"chicken", 500.0, "grams"}, {"onion", 1.0, "pieces"}, {"garlic", 2.0, "pieces"}, {"tomato", 2.0, "pieces"}, {"curry powder", 2.0, "tablespoons"}, {"rice", 2.0, "cups"} },
-            { {"Tuna Sandwich"}, {"tuna", 1.0, "can"}, {"bread", 4.0, "slices"}, {"mayonnaise", 2.0, "tablespoons"}, {"onion", 0.5, "pieces"} },
+            { {"Tuna Sandwich"}, {"tuna", 1.0, "cans"}, {"bread", 4.0, "slices"}, {"mayonnaise", 2.0, "tablespoons"}, {"onion", 0.5, "pieces"} },
             { {"Beef Stir Fry"}, {"beef", 300.0, "grams"}, {"mixed vegetables", 200.0, "grams"}, {"soy sauce", 2.0, "tablespoons"}, {"oil", 2.0, "tablespoons"} },
             { {"Potato Omelette"}, {"potato", 2.0, "pieces"}, {"egg", 4.0, "pieces"}, {"oil", 3.0, "tablespoons"} },
             { {"Tomato Rice"}, {"rice", 2.0, "cups"}, {"tomato", 2.0, "pieces"}, {"onion", 1.0, "pieces"}, {"garlic", 1.0, "pieces"} },
@@ -301,7 +281,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             { {"Egg Sandwich"}, {"egg", 3.0, "pieces"}, {"bread", 4.0, "slices"}, {"mayonnaise", 2.0, "tablespoons"} },
             { {"Potato Curry"}, {"potato", 3.0, "pieces"}, {"onion", 1.0, "pieces"}, {"curry powder", 2.0, "tablespoons"}, {"garlic", 2.0, "pieces"} },
             { {"Chicken Wrap"}, {"chicken", 300.0, "grams"}, {"tortilla", 2.0, "pieces"}, {"lettuce", 50.0, "grams"}, {"tomato", 1.0, "pieces"}, {"mayonnaise", 2.0, "tablespoons"} },
-            { {"Tuna Pasta"}, {"tuna", 1.0, "can"}, {"pasta", 200.0, "grams"}, {"mayonnaise", 2.0, "tablespoons"}, {"lemon", 1.0, "pieces"} },
+            { {"Tuna Pasta"}, {"tuna", 1.0, "cans"}, {"pasta", 200.0, "grams"}, {"mayonnaise", 2.0, "tablespoons"}, {"lemon", 1.0, "pieces"} },
             { {"Vegetable Soup"}, {"mixed vegetables", 300.0, "grams"}, {"onion", 1.0, "pieces"}, {"garlic", 2.0, "pieces"}, {"vegetable stock", 500.0, "milliliters"} },
             { {"Beef Rice"}, {"beef", 300.0, "grams"}, {"rice", 2.0, "cups"}, {"onion", 1.0, "pieces"}, {"tomato", 2.0, "pieces"} },
             { {"Chicken Soup"}, {"chicken", 500.0, "grams"}, {"mixed vegetables", 200.0, "grams"}, {"onion", 1.0, "pieces"}, {"garlic", 2.0, "pieces"} },
