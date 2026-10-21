@@ -61,5 +61,4 @@ expiry_date                               unit
 ## Strict Matching Rule
 A recipe appears in Suggested Recipes **only if** every required ingredient is present in the pantry **in at least the required quantity**. If even one ingredient is missing or insufficient, the recipe is excluded.
 
-## Author
-Richfield Graduate Institute of Technology — Mobile App Development 700
+

@@ -83,11 +83,15 @@ public class MainActivity extends AppCompatActivity {
         if (items.isEmpty()) {
             tvEmptyMessage.setVisibility(View.VISIBLE);
             recyclerView.setVisibility(View.GONE);
-            findViewById(R.id.headerContainer).setVisibility(View.GONE);
+            if (findViewById(R.id.headerContainer) != null) {
+                findViewById(R.id.headerContainer).setVisibility(View.GONE);
+            }
         } else {
             tvEmptyMessage.setVisibility(View.GONE);
             recyclerView.setVisibility(View.VISIBLE);
-            findViewById(R.id.headerContainer).setVisibility(View.VISIBLE);
+            if (findViewById(R.id.headerContainer) != null) {
+                findViewById(R.id.headerContainer).setVisibility(View.VISIBLE);
+            }
         }
     }
 
@@ -112,10 +116,14 @@ public class MainActivity extends AppCompatActivity {
             if (id == R.id.nav_pantry) {
                 return true;
             } else if (id == R.id.nav_recipes) {
-                startActivity(new Intent(this, SuggestedRecipesActivity.class));
+                Intent intent = new Intent(this, SuggestedRecipesActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                startActivity(intent);
                 return true;
             } else if (id == R.id.nav_settings) {
-                startActivity(new Intent(this, SettingsActivity.class));
+                Intent intent = new Intent(this, SettingsActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                startActivity(intent);
                 return true;
             }
             return false;

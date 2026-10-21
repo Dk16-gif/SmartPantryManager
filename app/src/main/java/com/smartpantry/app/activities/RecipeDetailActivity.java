@@ -10,6 +10,7 @@ import com.smartpantry.app.R;
 import com.smartpantry.app.database.DatabaseHelper;
 import com.smartpantry.app.models.Recipe;
 import com.smartpantry.app.models.RecipeIngredient;
+import com.smartpantry.app.utils.IconUtils;
 
 public class RecipeDetailActivity extends AppCompatActivity {
 
@@ -42,18 +43,22 @@ public class RecipeDetailActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         tvName.setText(recipe.getName());
-        if (recipe.getIconEmoji() != null) {
-            tvIcon.setText(recipe.getIconEmoji());
-        }
+        
+        // Use IconUtils for consistent matching with the list
+        tvIcon.setText(IconUtils.getRecipeIcon(recipe.getName()));
 
         // Build ingredients list
         StringBuilder sb = new StringBuilder();
         if (recipe.getIngredients() != null) {
             for (RecipeIngredient ri : recipe.getIngredients()) {
                 String qty = formatQty(ri.getRequiredQuantity());
-                sb.append("<b>• ").append(ri.getIngredientName()).append("</b>")
+                String icon = IconUtils.getIngredientIcon(ri.getIngredientName());
+                // Pass both quantity and unit for correct pluralization
+                String fullUnit = IconUtils.getFullUnitName(ri.getRequiredQuantity(), ri.getUnit());
+                
+                sb.append("<b>").append(icon).append(" ").append(ri.getIngredientName()).append("</b>")
                         .append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;")
-                        .append("<font color='#1976D2'>").append(qty).append(" ").append(ri.getUnit()).append("</font>")
+                        .append("<font color='#1976D2'>").append(qty).append(" ").append(fullUnit).append("</font>")
                         .append("<br/><br/>");
             }
         }

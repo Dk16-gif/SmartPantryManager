@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.smartpantry.app.R;
 import com.smartpantry.app.models.Recipe;
-import com.smartpantry.app.models.RecipeIngredient;
+import com.smartpantry.app.utils.IconUtils;
 
 import java.util.List;
 
@@ -47,17 +47,14 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         Recipe recipe = recipes.get(position);
         holder.tvRecipeName.setText(recipe.getName());
 
-        if (recipe.getIconEmoji() != null && !recipe.getIconEmoji().isEmpty()) {
-            holder.tvRecipeIcon.setText(recipe.getIconEmoji());
-        } else {
-            holder.tvRecipeIcon.setText("🍳");
-        }
+        // Use IconUtils for consistent recipe icons
+        holder.tvRecipeIcon.setText(IconUtils.getRecipeIcon(recipe.getName()));
 
         // Show ingredient count as subtitle
         int count = recipe.getIngredients() != null ? recipe.getIngredients().size() : 0;
         holder.tvIngredientCount.setText(count + " items");
 
-        // Creativity: Set Meal Type based on name
+        // Set Meal Type based on name
         holder.tvMealType.setText(getMealType(recipe.getName()));
 
         holder.cardView.setOnClickListener(v -> listener.onRecipeClick(recipe));
@@ -68,7 +65,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         if (n.contains("rice") || n.contains("pasta") || n.contains("curry") || n.contains("fry") || n.contains("stir")) return "Dinner";
         if (n.contains("omelette") || n.contains("egg") || n.contains("hash")) return "Breakfast";
         if (n.contains("sandwich") || n.contains("wrap") || n.contains("soup")) return "Lunch";
-        return "Main";
+        return "Main Course";
     }
 
     @Override

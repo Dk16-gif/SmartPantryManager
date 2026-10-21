@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.smartpantry.app.R;
 import com.smartpantry.app.models.PantryItem;
+import com.smartpantry.app.utils.IconUtils;
 
 import java.util.List;
 
@@ -50,13 +51,15 @@ public class PantryAdapter extends RecyclerView.Adapter<PantryAdapter.PantryView
         PantryItem item = items.get(position);
         holder.tvName.setText(item.getIngredientName());
 
-        String qty = formatQuantity(item.getQuantity()) + " " + item.getUnit();
+        // Use full unit names with pluralization support
+        String fullUnit = IconUtils.getFullUnitName(item.getQuantity(), item.getUnit());
+        String qty = formatQuantity(item.getQuantity()) + " " + fullUnit;
         holder.tvQuantity.setText(qty);
 
-        // Visual Polish: Category Strip and Icon
-        int color = getCategoryColor(item.getIngredientName());
+        // Visual Polish: Category Strip and Icon using IconUtils
+        int color = IconUtils.getIngredientColor(item.getIngredientName());
         holder.categoryStrip.setBackgroundColor(color);
-        holder.tvCategoryIcon.setText(getCategoryIcon(item.getIngredientName()));
+        holder.tvCategoryIcon.setText(IconUtils.getIngredientIcon(item.getIngredientName()));
 
         if (item.getExpiryDate() != null && !item.getExpiryDate().isEmpty() && showExpiryAlerts) {
             holder.tvExpiry.setVisibility(View.VISIBLE);
@@ -95,41 +98,6 @@ public class PantryAdapter extends RecyclerView.Adapter<PantryAdapter.PantryView
         } catch (Exception e) {
             badge.setVisibility(View.GONE);
         }
-    }
-
-    private int getCategoryColor(String name) {
-        String n = name.toLowerCase();
-        if (n.contains("chicken") || n.contains("beef") || n.contains("meat") || n.contains("steak") || n.contains("lamb")) return 0xFFEF5350; // Red
-        if (n.contains("tuna") || n.contains("fish") || n.contains("salmon") || n.contains("shrimp")) return 0xFF42A5F5; // Blue
-        if (n.contains("tomato") || n.contains("onion") || n.contains("pepper") || n.contains("carrot") || n.contains("vegetable") || n.contains("potato") || n.contains("lettuce") || n.contains("garlic")) return 0xFF66BB6A; // Green
-        if (n.contains("milk") || n.contains("cheese") || n.contains("egg") || n.contains("butter") || n.contains("cream") || n.contains("yogurt")) return 0xFFFFCA28; // Amber
-        if (n.contains("pasta") || n.contains("rice") || n.contains("bread") || n.contains("flour") || n.contains("noodle") || n.contains("wrap") || n.contains("tortilla")) return 0xFF8D6E63; // Brown
-        if (n.contains("oil") || n.contains("sauce") || n.contains("mayonnaise") || n.contains("ketchup") || n.contains("salt") || n.contains("spice") || n.contains("sugar")) return 0xFF78909C; // Grey
-        return 0xFF26A69A; // Teal default
-    }
-
-    private String getCategoryIcon(String name) {
-        String n = name.toLowerCase();
-        if (n.contains("chicken") || n.contains("beef") || n.contains("meat") || n.contains("steak") || n.contains("lamb")) return "🥩";
-        if (n.contains("tuna") || n.contains("fish") || n.contains("salmon") || n.contains("shrimp")) return "🐟";
-        if (n.contains("tomato") || n.contains("carrot") || n.contains("potato") || n.contains("garlic")) return "🥕";
-        if (n.contains("onion")) return "🧅";
-        if (n.contains("pepper")) return "🫑";
-        if (n.contains("lettuce") || n.contains("vegetable") || n.contains("cabbage") || n.contains("spinach")) return "🥗";
-        if (n.contains("egg")) return "🥚";
-        if (n.contains("milk") || n.contains("cream") || n.contains("yogurt")) return "🥛";
-        if (n.contains("cheese")) return "🧀";
-        if (n.contains("butter")) return "🧈";
-        if (n.contains("pasta") || n.contains("noodle")) return "🍝";
-        if (n.contains("rice")) return "🍚";
-        if (n.contains("bread") || n.contains("toast")) return "🍞";
-        if (n.contains("wrap") || n.contains("tortilla")) return "🌯";
-        if (n.contains("oil")) return "🧴";
-        if (n.contains("mayonnaise") || n.contains("mayo")) return "🥣"; // Creamy dressing in a bowl
-        if (n.contains("sauce") || n.contains("ketchup") || n.contains("mustard")) return "🍶"; // Condiment bottle
-        if (n.contains("salt") || n.contains("spice") || n.contains("sugar") || n.contains("powder")) return "🧂";
-        if (n.contains("can") || n.contains("tin")) return "🥫";
-        return "📦"; // General pantry box
     }
 
     private String formatQuantity(double qty) {

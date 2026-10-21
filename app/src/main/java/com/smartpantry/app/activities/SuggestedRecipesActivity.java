@@ -64,11 +64,15 @@ public class SuggestedRecipesActivity extends AppCompatActivity {
         if (count == 0) {
             tvNoMatch.setVisibility(View.VISIBLE);
             recyclerView.setVisibility(View.GONE);
-            findViewById(R.id.recipeHeader).setVisibility(View.GONE);
+            if (findViewById(R.id.recipeHeader) != null) {
+                findViewById(R.id.recipeHeader).setVisibility(View.GONE);
+            }
         } else {
             tvNoMatch.setVisibility(View.GONE);
             recyclerView.setVisibility(View.VISIBLE);
-            findViewById(R.id.recipeHeader).setVisibility(View.VISIBLE);
+            if (findViewById(R.id.recipeHeader) != null) {
+                findViewById(R.id.recipeHeader).setVisibility(View.VISIBLE);
+            }
             tvRecipeCount.setText("You can cook " + count + " delicious recipe" + (count == 1 ? "" : "s") + " right now!");
         }
     }
@@ -80,12 +84,16 @@ public class SuggestedRecipesActivity extends AppCompatActivity {
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_pantry) {
-                startActivity(new Intent(this, MainActivity.class));
+                Intent intent = new Intent(this, MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                startActivity(intent);
                 return true;
             } else if (id == R.id.nav_recipes) {
                 return true;
             } else if (id == R.id.nav_settings) {
-                startActivity(new Intent(this, SettingsActivity.class));
+                Intent intent = new Intent(this, SettingsActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                startActivity(intent);
                 return true;
             }
             return false;
