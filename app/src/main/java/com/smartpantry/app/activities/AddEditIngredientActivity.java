@@ -3,6 +3,7 @@ package com.smartpantry.app.activities;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
@@ -40,7 +41,7 @@ public class AddEditIngredientActivity extends AppCompatActivity {
             "grams", "kilograms", "milliliters", "liters", "pieces", "cans", "bunches", "packets"
     };
     private static final String[] IMPERIAL_UNITS = {
-            "cups", "tablespoons", "teaspoons", "slices", "pieces", "cans", "bunches", "packets"
+            "cups", "tablespoons", "teaspoons", "ounces", "pounds", "slices", "pieces", "cans", "bunches", "packets"
     };
 
     @Override
@@ -70,6 +71,12 @@ public class AddEditIngredientActivity extends AppCompatActivity {
                 R.layout.dropdown_item, unitsToDisplay);
         acUnit.setAdapter(unitAdapter);
 
+        // Ensure dropdown shows on click even with inputType="none"
+        acUnit.setOnClickListener(v -> acUnit.showDropDown());
+        acUnit.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) acUnit.showDropDown();
+        });
+
         // Date picker for expiry
         etExpiry.setOnClickListener(v -> showDatePicker());
         etExpiry.setFocusable(false);
@@ -82,6 +89,10 @@ public class AddEditIngredientActivity extends AppCompatActivity {
             loadItem();
         } else {
             tvTitle.setText("Add Ingredient");
+            // Set a default unit for new items so the field isn't blank
+            if (unitsToDisplay.length > 0) {
+                acUnit.setText(unitsToDisplay[0], false);
+            }
         }
 
         btnSave.setOnClickListener(v -> saveItem());
