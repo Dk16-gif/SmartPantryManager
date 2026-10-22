@@ -18,7 +18,7 @@ import java.util.List;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "smart_pantry.db";
-    private static final int DATABASE_VERSION = 8; // Increment to update seeds with "eggs" unit
+    private static final int DATABASE_VERSION = 9; // Increment for clean state
 
     // Pantry table
     public static final String TABLE_PANTRY = "pantry";
@@ -215,6 +215,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         for (Recipe recipe : allRecipes) {
             calculateMatch(recipe, pantry);
+            // Defensively check if ingredients exist
+            if (recipe.getIngredients() == null || recipe.getIngredients().isEmpty()) continue;
+
             if (recipe.isFullyMatched() || (recipe.getMatchCount() >= 2 && recipe.getMissingIngredients().size() <= 2)) {
                 suggested.add(recipe);
             }
@@ -234,22 +237,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         List<String> missing = new ArrayList<>();
         int matches = 0;
 
-        if (required == null) return;
-
-        for (RecipeIngredient needed : required) {
-            boolean found = false;
-            for (PantryItem available : pantry) {
-                if (IngredientNormalizer.matches(needed.getIngredientName(), available.getIngredientName())) {
-                    if (IngredientNormalizer.isEnough(needed.getRequiredQuantity(), needed.getUnit(),
-                            available.getQuantity(), available.getUnit())) {
-                        found = true;
-                        matches++;
-                        break;
+        if (required != null) {
+            for (RecipeIngredient needed : required) {
+                boolean found = false;
+                for (PantryItem available : pantry) {
+                    if (IngredientNormalizer.matches(needed.getIngredientName(), available.getIngredientName())) {
+                        if (IngredientNormalizer.isEnough(needed.getRequiredQuantity(), needed.getUnit(),
+                                available.getQuantity(), available.getUnit())) {
+                            found = true;
+                            matches++;
+                            break;
+                        }
                     }
                 }
-            }
-            if (!found) {
-                missing.add(needed.getIngredientName());
+                if (!found) {
+                    missing.add(needed.getIngredientName());
+                }
             }
         }
         recipe.setMatchCount(matches);
@@ -268,12 +271,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         };
 
         Object[][][] recipeIngredients = {
-                { {"Butter Toast"}, {"bread", 2.0, "slices"}, {"butter", 1.0, "tablespoons"} },
-                { {"Fried Rice"}, {"rice", 2.0, "cups"}, {"egg", 2.0, "eggs"}, {"onion", 1.0, "pieces"} },
-                { {"Tomato Pasta"}, {"pasta", 200.0, "grams"}, {"tomato", 2.0, "pieces"} },
-                { {"Omelette"}, {"egg", 3.0, "eggs"}, {"butter", 0.5, "tablespoons"} },
-                { {"Chicken Curry"}, {"chicken", 500.0, "grams"}, {"tomato", 2.0, "pieces"}, {"curry powder", 2.0, "tablespoons"} },
-                { {"Tuna Sandwich"}, {"tuna", 1.0, "cans"}, {"bread", 2.0, "slices"}, {"mayonnaise", 1.0, "tablespoons"} },
+                { {"Butter Toast"}, {"bread", 2.0, "slice"}, {"butter", 1.0, "tablespoon"} },
+                { {"Fried Rice"}, {"rice", 2.0, "cup"}, {"egg", 2.0, "egg"}, {"onion", 1.0, "piece"} },
+                { {"Tomato Pasta"}, {"pasta", 200.0, "grams"}, {"tomato", 2.0, "piece"} },
+                { {"Omelette"}, {"egg", 3.0, "egg"}, {"butter", 0.5, "tablespoon"} },
+                { {"Chicken Curry"}, {"chicken", 500.0, "grams"}, {"tomato", 2.0, "piece"}, {"curry powder", 2.0, "tablespoon"} },
+                { {"Tuna Sandwich"}, {"tuna", 1.0, "can"}, {"bread", 2.0, "slice"}, {"mayonnaise", 1.0, "tablespoon"} },
                 { {"Beef Stir Fry"}, {"beef", 300.0, "grams"}, {"mixed vegetables", 200.0, "grams"} }
         };
 

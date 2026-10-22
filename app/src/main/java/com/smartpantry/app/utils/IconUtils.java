@@ -6,14 +6,14 @@ public class IconUtils {
         if (name == null) return "📦";
         String n = name.toLowerCase();
         
-        // Priority Condiments & Spices (Differentiated unique forms)
+        // Condiments & Spices (Differentiated unique forms)
         if (n.contains("mayonnaise") || n.contains("mayo")) return "🫙"; // Jar form
-        if (n.contains("ketchup")) return "🥫"; // Red bottle/can form
-        if (n.contains("mustard")) return "🌭"; // Associated usage
+        if (n.contains("ketchup")) return "🥫"; // Squeeze bottle/Can form
+        if (n.contains("mustard")) return "🌭"; // Associated food icon
         if (n.contains("dressing")) return "🥗"; // Salad association
         if (n.contains("oil")) return "🫒"; // Olive/Source
-        if (n.contains("vinegar")) return "🍾"; // Vinegar bottle form
-        if (n.contains("soy sauce") || n.contains("soy")) return "🍶"; // Soy bottle form
+        if (n.contains("vinegar")) return "🍾"; // Tall bottle form
+        if (n.contains("soy")) return "🍶"; // Traditional soy bottle
         if (n.contains("sauce") && !n.contains("soy") && !n.contains("ketchup")) return "🏺"; // Jug form
 
         // Meat & Proteins

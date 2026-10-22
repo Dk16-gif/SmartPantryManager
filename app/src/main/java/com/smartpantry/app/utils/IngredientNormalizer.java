@@ -51,8 +51,8 @@ public class IngredientNormalizer {
         addUnitGroup("milliliters", 1.0, "ml", "milliliter", "millilitre", "millilitres");
         addUnitGroup("liters", 1000.0, "l", "liter", "litre", "litres");
         addUnitGroup("cups", 240.0, "cup");
-        addUnitGroup("tablespoons", 15.0, "tbsp", "tablespoon", "tbs", "tablespoons");
-        addUnitGroup("teaspoons", 5.0, "tsp", "teaspoon", "teaspoons");
+        addUnitGroup("tablespoons", 15.0, "tbsp", "tablespoon", "tbs");
+        addUnitGroup("teaspoons", 5.0, "tsp", "teaspoon");
 
         // Count (Base: pieces)
         addUnitGroup("pieces", 1.0, "pc", "pcs", "piece", "egg", "eggs", "unit", "units");
@@ -99,6 +99,7 @@ public class IngredientNormalizer {
     }
 
     public static double convertToBase(double qty, String unit) {
+        if (unit == null || unit.isEmpty()) return qty;
         String u = unit.trim().toLowerCase();
         Double factor = UNIT_FACTORS.get(u);
         if (factor == null) factor = UNIT_FACTORS.get(normalizeUnit(u));
