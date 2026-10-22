@@ -1,5 +1,7 @@
 package com.smartpantry.app.adapters;
 
+import android.graphics.Color;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -7,6 +9,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.smartpantry.app.R;
@@ -47,15 +50,31 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         Recipe recipe = recipes.get(position);
         holder.tvRecipeName.setText(recipe.getName());
 
-        // Use IconUtils for consistent recipe icons
         holder.tvRecipeIcon.setText(IconUtils.getRecipeIcon(recipe.getName()));
 
-        // Show ingredient count as subtitle
-        int count = recipe.getIngredients() != null ? recipe.getIngredients().size() : 0;
-        holder.tvIngredientCount.setText(count + " items");
+        int total = recipe.getIngredients() != null ? recipe.getIngredients().size() : 0;
+        holder.tvIngredientCount.setText(total + " items total");
 
-        // Set Meal Type based on name
         holder.tvMealType.setText(getMealType(recipe.getName()));
+
+        // Display Match Status
+        if (recipe.isFullyMatched()) {
+            holder.tvMatchBadge.setText("Ready to Cook!");
+            holder.tvMatchBadge.setTextColor(Color.WHITE);
+            holder.tvMatchBadge.setBackgroundResource(R.drawable.badge_matched);
+            holder.tvMatchBadge.setBackgroundTintList(null);
+            holder.tvMissingInfo.setVisibility(View.GONE);
+        } else {
+            int missingCount = recipe.getMissingIngredients().size();
+            holder.tvMatchBadge.setText("Missing " + missingCount);
+            holder.tvMatchBadge.setTextColor(Color.WHITE);
+            holder.tvMatchBadge.setBackgroundResource(R.drawable.badge_matched);
+            holder.tvMatchBadge.setBackgroundTintList(ContextCompat.getColorStateList(holder.itemView.getContext(), R.color.status_amber));
+
+            holder.tvMissingInfo.setVisibility(View.VISIBLE);
+            String missingList = TextUtils.join(", ", recipe.getMissingIngredients());
+            holder.tvMissingInfo.setText("Need: " + missingList);
+        }
 
         holder.cardView.setOnClickListener(v -> listener.onRecipeClick(recipe));
     }
@@ -74,7 +93,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
     }
 
     static class RecipeViewHolder extends RecyclerView.ViewHolder {
-        TextView tvRecipeName, tvIngredientCount, tvRecipeIcon, tvMealType;
+        TextView tvRecipeName, tvIngredientCount, tvRecipeIcon, tvMealType, tvMatchBadge, tvMissingInfo;
         CardView cardView;
 
         RecipeViewHolder(@NonNull View itemView) {
@@ -83,7 +102,11 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
             tvIngredientCount = itemView.findViewById(R.id.tvIngredientCount);
             tvRecipeIcon = itemView.findViewById(R.id.tvRecipeIcon);
             tvMealType = itemView.findViewById(R.id.tvMealType);
-            cardView = itemView.findViewById(R.id.cardRecipe);
+            tvMatchBadge = itemView.findViewById(R.id.tvMatchBadge);
+            tvMissingInfo = new TextView(itemView.getContext()); // Fallback or find in layout
+
+            // Check if tvMissingInfo exists in item_recipe.xml, if not we need to add it.
+            tvMissingInfo = itemView.findViewById(R.id.tvMissingInfo);
         }
     }
 }

@@ -38,10 +38,10 @@ public class AddEditIngredientActivity extends AppCompatActivity {
     private int editItemId = NO_ID;
 
     private static final String[] METRIC_UNITS = {
-            "grams", "kilograms", "milliliters", "liters", "pieces", "cans", "bunches", "packets"
+            "grams", "kilograms", "milliliters", "liters", "pieces", "eggs", "cans", "bunches", "packets"
     };
     private static final String[] IMPERIAL_UNITS = {
-            "cups", "tablespoons", "teaspoons", "ounces", "pounds", "slices", "pieces", "cans", "bunches", "packets"
+            "cups", "tablespoons", "teaspoons", "ounces", "pounds", "eggs", "slices", "pieces", "cans", "bunches", "packets"
     };
 
     @Override

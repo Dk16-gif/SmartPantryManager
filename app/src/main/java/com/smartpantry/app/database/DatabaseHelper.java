@@ -12,12 +12,13 @@ import com.smartpantry.app.models.RecipeIngredient;
 import com.smartpantry.app.utils.IngredientNormalizer;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "smart_pantry.db";
-    private static final int DATABASE_VERSION = 6; // Force fresh seed with simple test recipe
+    private static final int DATABASE_VERSION = 8; // Increment to update seeds with "eggs" unit
 
     // Pantry table
     public static final String TABLE_PANTRY = "pantry";
@@ -213,80 +214,67 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         List<Recipe> suggested = new ArrayList<>();
 
         for (Recipe recipe : allRecipes) {
-            if (recipeMatchesPantry(recipe, pantry)) {
+            calculateMatch(recipe, pantry);
+            if (recipe.isFullyMatched() || (recipe.getMatchCount() >= 2 && recipe.getMissingIngredients().size() <= 2)) {
                 suggested.add(recipe);
             }
         }
+
+        Collections.sort(suggested, (r1, r2) -> {
+            if (r1.isFullyMatched() && !r2.isFullyMatched()) return -1;
+            if (!r1.isFullyMatched() && r2.isFullyMatched()) return 1;
+            return Integer.compare(r2.getMatchCount(), r1.getMatchCount());
+        });
+
         return suggested;
     }
 
-    private boolean recipeMatchesPantry(Recipe recipe, List<PantryItem> pantry) {
+    private void calculateMatch(Recipe recipe, List<PantryItem> pantry) {
         List<RecipeIngredient> required = recipe.getIngredients();
-        if (required == null || required.isEmpty()) return false;
+        List<String> missing = new ArrayList<>();
+        int matches = 0;
+
+        if (required == null) return;
 
         for (RecipeIngredient needed : required) {
             boolean found = false;
             for (PantryItem available : pantry) {
                 if (IngredientNormalizer.matches(needed.getIngredientName(), available.getIngredientName())) {
-                    if (IngredientNormalizer.isEnough(needed.getRequiredQuantity(), needed.getUnit(), 
-                                                     available.getQuantity(), available.getUnit())) {
+                    if (IngredientNormalizer.isEnough(needed.getRequiredQuantity(), needed.getUnit(),
+                            available.getQuantity(), available.getUnit())) {
                         found = true;
+                        matches++;
                         break;
                     }
                 }
             }
-            if (!found) return false;
+            if (!found) {
+                missing.add(needed.getIngredientName());
+            }
         }
-        return true;
+        recipe.setMatchCount(matches);
+        recipe.setMissingIngredients(missing);
     }
 
     private void seedRecipes(SQLiteDatabase db) {
         String[][] recipes = {
-            {"Butter Toast", "1. Toast the bread until golden brown.\n2. Spread butter evenly on the toast.\n3. Serve warm.", "🍞"},
-            {"Chicken Fried Rice", "1. Cook rice.\n2. Fry chicken.\n3. Add eggs and veggies.\n4. Stir in soy sauce.", "🍚"},
-            {"Tomato Pasta", "1. Boil pasta.\n2. Sauté garlic and tomatoes.\n3. Mix and serve.", "🍝"},
-            {"Vegetable Omelette", "1. Whisk eggs.\n2. Sauté veggies.\n3. Pour eggs and fold.", "🍳"},
-            {"Chicken Curry", "1. Brown chicken.\n2. Add spices and tomatoes.\n3. Simmer until tender.", "🍛"},
-            {"Tuna Sandwich", "1. Mix tuna and mayo.\n2. Spread on bread.", "🥪"},
-            {"Beef Stir Fry", "1. Sear beef.\n2. Add veggies and sauce.\n3. Stir fry.", "🥢"},
-            {"Potato Omelette", "1. Fry potatoes.\n2. Add eggs and cook.", "🥘"},
-            {"Tomato Rice", "1. Sauté onions.\n2. Cook rice with tomatoes.", "🥣"},
-            {"Chicken Pasta", "1. Cook pasta.\n2. Fry chicken.\n3. Mix with cream.", "🍜"},
-            {"Vegetable Rice", "1. Sauté veggies.\n2. Add rice and cook.", "🥗"},
-            {"Beef Pasta", "1. Brown beef.\n2. Add sauce and pasta.", "🍝"},
-            {"Egg Sandwich", "1. Mash eggs with mayo.\n2. Spread on bread.", "🥪"},
-            {"Potato Curry", "1. Sauté onions.\n2. Add potatoes and simmer.", "🍛"},
-            {"Chicken Wrap", "1. Grill chicken.\n2. Wrap with veggies.", "🌯"},
-            {"Tuna Pasta", "1. Cook pasta.\n2. Mix with tuna and mayo.", "🍝"},
-            {"Vegetable Soup", "1. Simmer veggies in stock.", "🍲"},
-            {"Beef Rice", "1. Fry beef.\n2. Mix with rice.", "🥣"},
-            {"Chicken Soup", "1. Simmer chicken and veggies.", "🍲"},
-            {"Tomato Omelette", "1. Sauté tomatoes.\n2. Add eggs.", "🍳"},
-            {"Potato and Egg Hash", "1. Fry potatoes.\n2. Crack eggs over top.", "🥘"}
+                {"Butter Toast", "1. Toast the bread.\n2. Spread butter.", "🍞"},
+                {"Fried Rice", "1. Cook rice.\n2. Fry with egg and onion.", "🍚"},
+                {"Tomato Pasta", "1. Boil pasta.\n2. Add tomato sauce.", "🍝"},
+                {"Omelette", "1. Whisk eggs.\n2. Fry until set.", "🍳"},
+                {"Chicken Curry", "1. Brown chicken.\n2. Simmer with curry and tomato.", "🍛"},
+                {"Tuna Sandwich", "1. Mix tuna and mayo.\n2. Spread on bread.", "🥪"},
+                {"Beef Stir Fry", "1. Sear beef.\n2. Toss with veggies.", "🥢"}
         };
 
         Object[][][] recipeIngredients = {
-            { {"Butter Toast"}, {"bread", 2.0, "slices"}, {"butter", 1.0, "tablespoons"} },
-            { {"Chicken Fried Rice"}, {"chicken", 300.0, "grams"}, {"rice", 2.0, "cups"}, {"egg", 2.0, "pieces"}, {"soy sauce", 2.0, "tablespoons"}, {"onion", 1.0, "pieces"} },
-            { {"Tomato Pasta"}, {"pasta", 200.0, "grams"}, {"tomato", 3.0, "pieces"}, {"garlic", 2.0, "pieces"}, {"olive oil", 2.0, "tablespoons"} },
-            { {"Vegetable Omelette"}, {"egg", 3.0, "pieces"}, {"onion", 1.0, "pieces"}, {"tomato", 1.0, "pieces"}, {"green pepper", 1.0, "pieces"}, {"butter", 1.0, "tablespoons"} },
-            { {"Chicken Curry"}, {"chicken", 500.0, "grams"}, {"onion", 1.0, "pieces"}, {"garlic", 2.0, "pieces"}, {"tomato", 2.0, "pieces"}, {"curry powder", 2.0, "tablespoons"}, {"rice", 2.0, "cups"} },
-            { {"Tuna Sandwich"}, {"tuna", 1.0, "cans"}, {"bread", 4.0, "slices"}, {"mayonnaise", 2.0, "tablespoons"}, {"onion", 0.5, "pieces"} },
-            { {"Beef Stir Fry"}, {"beef", 300.0, "grams"}, {"mixed vegetables", 200.0, "grams"}, {"soy sauce", 2.0, "tablespoons"}, {"oil", 2.0, "tablespoons"} },
-            { {"Potato Omelette"}, {"potato", 2.0, "pieces"}, {"egg", 4.0, "pieces"}, {"oil", 3.0, "tablespoons"} },
-            { {"Tomato Rice"}, {"rice", 2.0, "cups"}, {"tomato", 2.0, "pieces"}, {"onion", 1.0, "pieces"}, {"garlic", 1.0, "pieces"} },
-            { {"Chicken Pasta"}, {"chicken", 300.0, "grams"}, {"pasta", 200.0, "grams"}, {"garlic", 2.0, "pieces"}, {"cream", 100.0, "milliliters"} },
-            { {"Vegetable Rice"}, {"rice", 2.0, "cups"}, {"mixed vegetables", 200.0, "grams"}, {"onion", 1.0, "pieces"} },
-            { {"Beef Pasta"}, {"beef", 300.0, "grams"}, {"pasta", 200.0, "grams"}, {"tomato", 2.0, "pieces"}, {"onion", 1.0, "pieces"}, {"garlic", 2.0, "pieces"} },
-            { {"Egg Sandwich"}, {"egg", 3.0, "pieces"}, {"bread", 4.0, "slices"}, {"mayonnaise", 2.0, "tablespoons"} },
-            { {"Potato Curry"}, {"potato", 3.0, "pieces"}, {"onion", 1.0, "pieces"}, {"curry powder", 2.0, "tablespoons"}, {"garlic", 2.0, "pieces"} },
-            { {"Chicken Wrap"}, {"chicken", 300.0, "grams"}, {"tortilla", 2.0, "pieces"}, {"lettuce", 50.0, "grams"}, {"tomato", 1.0, "pieces"}, {"mayonnaise", 2.0, "tablespoons"} },
-            { {"Tuna Pasta"}, {"tuna", 1.0, "cans"}, {"pasta", 200.0, "grams"}, {"mayonnaise", 2.0, "tablespoons"}, {"lemon", 1.0, "pieces"} },
-            { {"Vegetable Soup"}, {"mixed vegetables", 300.0, "grams"}, {"onion", 1.0, "pieces"}, {"garlic", 2.0, "pieces"}, {"vegetable stock", 500.0, "milliliters"} },
-            { {"Beef Rice"}, {"beef", 300.0, "grams"}, {"rice", 2.0, "cups"}, {"onion", 1.0, "pieces"}, {"tomato", 2.0, "pieces"} },
-            { {"Chicken Soup"}, {"chicken", 500.0, "grams"}, {"mixed vegetables", 200.0, "grams"}, {"onion", 1.0, "pieces"}, {"garlic", 2.0, "pieces"} },
-            { {"Tomato Omelette"}, {"egg", 3.0, "pieces"}, {"tomato", 2.0, "pieces"}, {"butter", 1.0, "tablespoons"} },
-            { {"Potato and Egg Hash"}, {"potato", 2.0, "pieces"}, {"egg", 2.0, "pieces"}, {"onion", 1.0, "pieces"}, {"oil", 2.0, "tablespoons"} }
+                { {"Butter Toast"}, {"bread", 2.0, "slices"}, {"butter", 1.0, "tablespoons"} },
+                { {"Fried Rice"}, {"rice", 2.0, "cups"}, {"egg", 2.0, "eggs"}, {"onion", 1.0, "pieces"} },
+                { {"Tomato Pasta"}, {"pasta", 200.0, "grams"}, {"tomato", 2.0, "pieces"} },
+                { {"Omelette"}, {"egg", 3.0, "eggs"}, {"butter", 0.5, "tablespoons"} },
+                { {"Chicken Curry"}, {"chicken", 500.0, "grams"}, {"tomato", 2.0, "pieces"}, {"curry powder", 2.0, "tablespoons"} },
+                { {"Tuna Sandwich"}, {"tuna", 1.0, "cans"}, {"bread", 2.0, "slices"}, {"mayonnaise", 1.0, "tablespoons"} },
+                { {"Beef Stir Fry"}, {"beef", 300.0, "grams"}, {"mixed vegetables", 200.0, "grams"} }
         };
 
         java.util.Map<String, Long> recipeIdMap = new java.util.HashMap<>();

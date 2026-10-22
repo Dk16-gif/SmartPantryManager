@@ -6,6 +6,16 @@ public class IconUtils {
         if (name == null) return "📦";
         String n = name.toLowerCase();
         
+        // Priority Condiments & Spices (Differentiated unique forms)
+        if (n.contains("mayonnaise") || n.contains("mayo")) return "🫙"; // Jar form
+        if (n.contains("ketchup")) return "🥫"; // Red bottle/can form
+        if (n.contains("mustard")) return "🌭"; // Associated usage
+        if (n.contains("dressing")) return "🥗"; // Salad association
+        if (n.contains("oil")) return "🫒"; // Olive/Source
+        if (n.contains("vinegar")) return "🍾"; // Vinegar bottle form
+        if (n.contains("soy sauce") || n.contains("soy")) return "🍶"; // Soy bottle form
+        if (n.contains("sauce") && !n.contains("soy") && !n.contains("ketchup")) return "🏺"; // Jug form
+
         // Meat & Proteins
         if (n.contains("chicken")) return "🍗";
         if (n.contains("beef") || n.contains("steak") || n.contains("meat") || n.contains("lamb") || n.contains("pork")) return "🥩";
@@ -43,11 +53,8 @@ public class IconUtils {
         if (n.contains("bean") || n.contains("lentil") || n.contains("chickpea")) return "🫘";
         if (n.contains("wrap") || n.contains("tortilla")) return "🌯";
         
-        // Condiments & Spices
-        if (n.contains("mayonnaise") || n.contains("mayo") || n.contains("ketchup") || n.contains("mustard") || n.contains("dressing")) return "🧴"; 
-        if (n.contains("oil") || n.contains("vinegar") || n.contains("sauce") || n.contains("soy")) return "🍶";
-        
-        if (n.contains("salt") || n.contains("spice") || n.contains("sugar") || n.contains("cinnamon") || n.contains("powder") || n.contains("pepper") && n.contains("ground")) return "🧂";
+        // Spices & Others
+        if (n.contains("salt") || n.contains("spice") || n.contains("sugar") || n.contains("cinnamon") || n.contains("powder")) return "🧂";
         if (n.contains("honey") || n.contains("syrup") || n.contains("jam") || n.contains("spread")) return "🍯";
         
         if (n.contains("can") || n.contains("tin") || n.contains("paste") || n.contains("puree")) return "🥫";
@@ -113,6 +120,9 @@ public class IconUtils {
             case "litre":
             case "litres":
                 return plural ? "liters" : "liter";
+            case "egg":
+            case "eggs":
+                return plural ? "eggs" : "egg";
             case "pcs":
             case "pc":
             case "piece":

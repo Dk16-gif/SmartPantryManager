@@ -2,15 +2,20 @@ package com.smartpantry.app.activities;
 
 import android.os.Bundle;
 import android.text.Html;
+import android.view.View;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.smartpantry.app.R;
 import com.smartpantry.app.database.DatabaseHelper;
+import com.smartpantry.app.models.PantryItem;
 import com.smartpantry.app.models.Recipe;
 import com.smartpantry.app.models.RecipeIngredient;
 import com.smartpantry.app.utils.IconUtils;
+import com.smartpantry.app.utils.IngredientNormalizer;
+
+import java.util.List;
 
 public class RecipeDetailActivity extends AppCompatActivity {
 
@@ -29,6 +34,7 @@ public class RecipeDetailActivity extends AppCompatActivity {
 
         DatabaseHelper dbHelper = new DatabaseHelper(this);
         Recipe recipe = dbHelper.getRecipeById(recipeId);
+        List<PantryItem> pantry = dbHelper.getAllPantryItems();
 
         if (recipe == null) {
             finish();
@@ -43,22 +49,24 @@ public class RecipeDetailActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         tvName.setText(recipe.getName());
-        
-        // Use IconUtils for consistent matching with the list
         tvIcon.setText(IconUtils.getRecipeIcon(recipe.getName()));
 
-        // Build ingredients list
+        // Build ingredients list with match status
         StringBuilder sb = new StringBuilder();
         if (recipe.getIngredients() != null) {
             for (RecipeIngredient ri : recipe.getIngredients()) {
+                boolean hasIt = checkPantry(ri, pantry);
+                String statusIcon = hasIt ? " ✅ " : " ❌ ";
+                String color = hasIt ? "#43A047" : "#E53935"; // Green vs Red
+
                 String qty = formatQty(ri.getRequiredQuantity());
                 String icon = IconUtils.getIngredientIcon(ri.getIngredientName());
-                // Pass both quantity and unit for correct pluralization
                 String fullUnit = IconUtils.getFullUnitName(ri.getRequiredQuantity(), ri.getUnit());
                 
-                sb.append("<b>").append(icon).append(" ").append(ri.getIngredientName()).append("</b>")
-                        .append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;")
-                        .append("<font color='#1976D2'>").append(qty).append(" ").append(fullUnit).append("</font>")
+                sb.append("<font color='").append(color).append("'><b>").append(statusIcon)
+                        .append(icon).append(" ").append(ri.getIngredientName()).append("</b></font>")
+                        .append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
+                        .append("<font color='#546E7A'>").append(qty).append(" ").append(fullUnit).append("</font>")
                         .append("<br/><br/>");
             }
         }
@@ -70,11 +78,22 @@ public class RecipeDetailActivity extends AppCompatActivity {
         }
         tvInstructions.setText(recipe.getInstructions());
 
-        // Back button in toolbar
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setTitle(recipe.getName());
         }
+    }
+
+    private boolean checkPantry(RecipeIngredient needed, List<PantryItem> pantry) {
+        for (PantryItem available : pantry) {
+            if (IngredientNormalizer.matches(needed.getIngredientName(), available.getIngredientName())) {
+                if (IngredientNormalizer.isEnough(needed.getRequiredQuantity(), needed.getUnit(),
+                        available.getQuantity(), available.getUnit())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override

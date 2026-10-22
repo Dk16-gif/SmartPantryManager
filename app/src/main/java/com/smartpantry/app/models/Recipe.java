@@ -1,5 +1,6 @@
 package com.smartpantry.app.models;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Recipe {
@@ -8,6 +9,10 @@ public class Recipe {
     private String instructions;
     private String iconEmoji;
     private List<RecipeIngredient> ingredients;
+
+    // Fields for matching logic
+    private List<String> missingIngredients = new ArrayList<>();
+    private int matchCount = 0;
 
     public Recipe() {}
 
@@ -32,4 +37,14 @@ public class Recipe {
 
     public List<RecipeIngredient> getIngredients() { return ingredients; }
     public void setIngredients(List<RecipeIngredient> ingredients) { this.ingredients = ingredients; }
+
+    public List<String> getMissingIngredients() { return missingIngredients; }
+    public void setMissingIngredients(List<String> missingIngredients) { this.missingIngredients = missingIngredients; }
+
+    public int getMatchCount() { return matchCount; }
+    public void setMatchCount(int matchCount) { this.matchCount = matchCount; }
+
+    public boolean isFullyMatched() {
+        return missingIngredients.isEmpty();
+    }
 }

@@ -55,7 +55,7 @@ public class IngredientNormalizer {
         addUnitGroup("teaspoons", 5.0, "tsp", "teaspoon", "teaspoons");
 
         // Count (Base: pieces)
-        addUnitGroup("pieces", 1.0, "pc", "pcs", "piece");
+        addUnitGroup("pieces", 1.0, "pc", "pcs", "piece", "egg", "eggs", "unit", "units");
         addUnitGroup("cans", 1.0, "can");
         addUnitGroup("slices", 1.0, "slice");
         addUnitGroup("packets", 1.0, "packet", "pack", "packs");
