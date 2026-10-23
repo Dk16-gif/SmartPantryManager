@@ -60,6 +60,8 @@ public class IngredientNormalizer {
         addUnitGroup("slices", 1.0, "slice");
         addUnitGroup("packets", 1.0, "packet", "pack", "packs");
         addUnitGroup("bunches", 1.0, "bunch");
+        addUnitGroup("cloves", 1.0, "clove");
+        addUnitGroup("bottles", 1.0, "bottle");
     }
 
     private static void addUnitGroup(String canonical, double factor, String... variants) {
@@ -132,6 +134,6 @@ public class IngredientNormalizer {
     }
 
     private static boolean isCount(String u) {
-        return u.equals("pieces") || u.equals("cans") || u.equals("slices") || u.equals("packets") || u.equals("bunches");
+        return u.equals("pieces") || u.equals("cans") || u.equals("slices") || u.equals("packets") || u.equals("bunches") || u.equals("cloves") || u.equals("bottles");
     }
 }

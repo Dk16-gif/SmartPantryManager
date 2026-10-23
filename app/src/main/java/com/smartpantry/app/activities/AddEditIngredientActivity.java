@@ -37,11 +37,12 @@ public class AddEditIngredientActivity extends AppCompatActivity {
     private DatabaseHelper dbHelper;
     private int editItemId = NO_ID;
 
+    // Comprehensive list of units matching recipe seeds and normalizer
     private static final String[] METRIC_UNITS = {
-            "grams", "kilograms", "milliliters", "liters", "tablespoons", "teaspoons", "pieces", "eggs", "slices", "cans", "bunches", "packets"
+            "gram", "kilogram", "milliliter", "liter", "cup", "tablespoon", "teaspoon", "piece", "egg", "slice", "can", "packet", "bunch", "clove", "bottle"
     };
     private static final String[] IMPERIAL_UNITS = {
-            "cups", "tablespoons", "teaspoons", "ounces", "pounds", "slices", "pieces", "eggs", "cans", "bunches", "packets"
+            "cup", "ounce", "pound", "tablespoon", "teaspoon", "piece", "egg", "slice", "can", "packet", "bunch", "clove", "bottle", "gram"
     };
 
     @Override
@@ -70,8 +71,8 @@ public class AddEditIngredientActivity extends AppCompatActivity {
         ArrayAdapter<String> unitAdapter = new ArrayAdapter<>(this,
                 R.layout.dropdown_item, unitsToDisplay);
         acUnit.setAdapter(unitAdapter);
-
-        // Ensure dropdown shows on click even with inputType="none"
+        
+        // Ensure dropdown shows on click
         acUnit.setOnClickListener(v -> acUnit.showDropDown());
         acUnit.setOnFocusChangeListener((v, hasFocus) -> {
             if (hasFocus) acUnit.showDropDown();
@@ -89,16 +90,14 @@ public class AddEditIngredientActivity extends AppCompatActivity {
             loadItem();
         } else {
             tvTitle.setText("Add Ingredient");
-            // Set a default unit for new items so the field isn't blank
             if (unitsToDisplay.length > 0) {
-                acUnit.setText(unitsToDisplay[0], false);
+                acUnit.setText(unitsToDisplay[7], false); // Default to 'piece'
             }
         }
 
         btnSave.setOnClickListener(v -> saveItem());
         btnCancel.setOnClickListener(v -> handleDiscard());
 
-        // Handle Back Navigation with Safety Check
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -139,7 +138,6 @@ public class AddEditIngredientActivity extends AppCompatActivity {
     }
 
     private void saveItem() {
-        // Clear previous errors
         tilName.setError(null);
         tilQuantity.setError(null);
         tilUnit.setError(null);
@@ -173,7 +171,7 @@ public class AddEditIngredientActivity extends AppCompatActivity {
         }
 
         if (TextUtils.isEmpty(unit)) {
-            tilUnit.setError("Please select or enter a unit");
+            tilUnit.setError("Please select a unit");
             valid = false;
         }
 
